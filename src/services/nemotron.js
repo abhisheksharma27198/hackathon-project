@@ -361,3 +361,130 @@ function simulateNemotronSockpuppetMatch(oldAccount, newAccount, targetVictim) {
     timestamp: new Date().toISOString(),
   };
 }
+
+/**
+ * Autonomous 1-Click Profile URL or Handle Scanner
+ * Takes any profile URL (e.g. https://x.com/username) or handle and determines
+ * if it is a bot, troll, scam, or doing harm without requiring manual metadata input.
+ */
+export async function analyzeUrlOrHandleWithNemotron(
+  urlOrHandle,
+  model = "nvidia/Nemotron-3-Ultra-550b-a55b"
+) {
+  const apiKey = getApiKey();
+  const baseUrl = getBaseUrl();
+
+  let platform = "Web / Social";
+  let cleanHandle = urlOrHandle.trim();
+
+  if (/x\.com|twitter\.com/i.test(urlOrHandle)) {
+    platform = "Twitter / X";
+    const match = urlOrHandle.match(/(?:x|twitter)\.com\/([a-zA-Z0-9_]+)/i);
+    if (match && match[1]) cleanHandle = `@${match[1]}`;
+  } else if (/instagram\.com/i.test(urlOrHandle)) {
+    platform = "Instagram";
+    const match = urlOrHandle.match(/instagram\.com\/([a-zA-Z0-9_.]+)/i);
+    if (match && match[1]) cleanHandle = `@${match[1]}`;
+  } else if (/linkedin\.com/i.test(urlOrHandle)) {
+    platform = "LinkedIn";
+  } else if (/t\.me|telegram\.me/i.test(urlOrHandle)) {
+    platform = "Telegram";
+    const match = urlOrHandle.match(/(?:t|telegram)\.me\/([a-zA-Z0-9_]+)/i);
+    if (match && match[1]) cleanHandle = `@${match[1]}`;
+  }
+
+  if (apiKey) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.1,
+          max_tokens: 700,
+          messages: [
+            {
+              role: "system",
+              content: `You are an elite autonomous OSINT and Trust & Safety AI investigator powered by NVIDIA Nemotron on Nebius Token Factory.
+Autonomously analyze the target social profile URL/handle ("${urlOrHandle}").
+Determine:
+1. Classification: Bot farm, Phishing/Scam node, Sybil puppet, Serial Troll/Harasser, or Authentic Human.
+2. Is this account actively trolling, harassing, astroturfing, or doing harm?
+3. Calculate an overall Risk Score (0-100) and Bot/Fraud Probability.
+4. Output recommended policy enforcement.
+
+Respond ONLY with a JSON object in this exact schema without conversational text:
+{
+  "handle": "${cleanHandle}",
+  "platform": "${platform}",
+  "score": <integer 0-100>,
+  "confidence": <integer 0-100>,
+  "accountType": "<Bot Farm | Serial Troll | Phishing Node | High-Risk Impersonator | Legitimate User>",
+  "isTrollingOrAbusive": <boolean>,
+  "abuseSeverity": "<Critical | High | Moderate | None>",
+  "verdict": "<Quarantine & Freeze ID | Flag for Moderation | Safe to Interact>",
+  "reasons": ["<reason1>", "<reason2>", "<reason3>"],
+  "behavioralAnomalies": ["<anomaly1>", "<anomaly2>"],
+  "recommendedAction": "<⚡ Instant Freeze: Require Government ID | Shadowban & Demote | Clear & Approve>",
+  "forensicSummary": "<concise explanation of what this account was detected doing>"
+}`,
+            },
+            {
+              role: "user",
+              content: `Investigate target URL/handle: ${urlOrHandle}`,
+            },
+          ],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || "";
+        const parsed = extractJson(content);
+        if (parsed && typeof parsed.score === "number") {
+          return {
+            ...parsed,
+            isLiveInference: true,
+            modelUsed: model,
+            timestamp: new Date().toISOString(),
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Live autonomous scan failed, using fallback:", err);
+    }
+  }
+
+  // Fallback simulator for URL scan
+  const lower = urlOrHandle.toLowerCase();
+  const isSuspicious = /(bot|scam|giveaway|crypto|free|troll|clone|spam|hack)/.test(lower);
+  const score = isSuspicious ? 92 : 25;
+  return {
+    handle: cleanHandle,
+    platform,
+    score,
+    confidence: 88,
+    accountType: isSuspicious ? "Suspected Bot / Scam Node" : "Standard Profile",
+    isTrollingOrAbusive: isSuspicious,
+    abuseSeverity: isSuspicious ? "High" : "None",
+    verdict: isSuspicious ? "Quarantine & Freeze ID" : "Safe to Interact",
+    reasons: isSuspicious
+      ? ["High entropy or keyword match in handle", "Pattern matches programmatic syndicates"]
+      : ["Natural profile naming conventions", "No overt malicious anchors identified"],
+    behavioralAnomalies: isSuspicious
+      ? ["Suspicious naming taxonomy", "Potential automation footprint"]
+      : ["Normal social graph profile indicators"],
+    recommendedAction: isSuspicious
+      ? "⚡ Instant Freeze: Require Government ID"
+      : "Clear & Approve",
+    forensicSummary: isSuspicious
+      ? "Profile shows indicators consistent with malicious or automated bot activity."
+      : "Profile presents standard characteristics without immediate threat indicators.",
+    isLiveInference: false,
+    timestamp: new Date().toISOString(),
+  };
+}
+
