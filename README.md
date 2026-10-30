@@ -24,7 +24,7 @@ Traditional fake-account detection only evaluates static metrics like follower c
    - Explicit or implicit ban-evasion admissions.
    - Temporal rebound velocity (created within hours of the block).
    - Fixation targeting on the exact same victim.
-2. **Autonomous Policy Enforcement (Instant ID Freeze):** If stylometric correlation exceeds the confidence threshold ($\ge 85\%$), the system executes an **instant quarantine**:
+2. **Autonomous Policy Enforcement (Instant ID Freeze):** If stylometric correlation or fraud risk score exceeds the threshold ($\ge 50\%$), the system executes an **instant quarantine**:
    - The burner account is locked from tagging, messaging, or replying to the victim.
    - The account is frozen platform-wide until the operator proves their identity via official government ID.
    - An immutable Trust & Safety forensic audit dossier is automatically generated.
@@ -33,11 +33,11 @@ Traditional fake-account detection only evaluates static metrics like follower c
 
 ## 🌟 Key Application Modules
 
-- **🎭 Sockpuppet & Serial Troll Hunter (`/sockpuppet-hunter`):** Compare historical troll profiles against newly created suspect accounts targeting the same victim. Features 1-click test scenarios (Serial Harasser Ban Evasion, Impersonation Clone, Authentic Unrelated User) and live ID-freeze execution.
-- **🔍 Profile Signal & Botnet Analysis (`/analyze`):** Deep multi-signal account audit. Choose between Fast Triage (`Nemotron 3.5 Lightning`) and Deep Reasoning (`Nemotron 70B`).
-- **📊 Real-Time Telemetry Dashboard (`/dashboard`):** Track live platform metrics: accounts profiled, botnets flagged, sockpuppet rings broken, and automated ID freezes executed.
-- **📑 Incident Audit & Compliance Reports (`/reports`):** Comprehensive forensic evidence dossiers with exportable PDF and machine-readable JSON packets.
-- **🔑 In-App Nebius Key Manager:** Plug in your own Nebius Token Factory API key to run live inference against NVIDIA GPU endpoints, with a high-fidelity offline demonstration engine ready out of the box.
+- **🎭 Sockpuppet & Serial Troll Hunter (`/sockpuppet-hunter`):** Compare historical troll profiles against newly created suspect burner accounts targeting the same victim. Analyzes stylometric overlap, temporal rebound velocity, and triggers an automated instant ID-freeze.
+- **🌐 1-Click Autonomous URL & Handle Auto-Scanner (`/analyze`):** Just paste any social profile URL (`https://x.com/...`, `https://instagram.com/...`, or `@handle`). NVIDIA Nemotron autonomously inspects the entity, classifies bot type, detects harassment/harmful intent, and issues an immediate policy verdict without typing numbers.
+- **📊 Real-Time Telemetry Dashboard (`/dashboard`):** 100% live session-driven command center. Calculates accounts profiled, botnets flagged, sockpuppets intercepted, and automated ID freezes directly from your active session.
+- **📑 Incident Audit & Compliance Reports (`/reports`):** Comprehensive forensic evidence dossiers generated from your session with exportable PDF and machine-readable JSON packets.
+- **🔑 In-App Nebius Key Manager:** Plug in your own Nebius Token Factory API key to run live inference against NVIDIA GPU endpoints (`nvidia/Nemotron-3-Ultra-550b-a55b` and `nvidia/Nemotron-3_5-Lightning`).
 
 ---
 
@@ -58,9 +58,9 @@ Traditional fake-account detection only evaluates static metrics like follower c
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │              NVIDIA Open-Source Models                 │
-│    • NVIDIA Llama-3.1-Nemotron-70B-Instruct           │
-│      (Deep Stylometric Reasoning & Authorship)         │
-│    • NVIDIA Nemotron-3.5-Lightning                     │
+│    • nvidia/Nemotron-3-Ultra-550b-a55b                 │
+│      (Deep Stylometric Reasoning & Autonomous OSINT)   │
+│    • nvidia/Nemotron-3_5-Lightning                     │
 │      (Ultra-fast Heuristic & Triage Screening)         │
 └────────────────────────────────────────────────────────┘
 ```
@@ -103,7 +103,7 @@ Traditional fake-account detection only evaluates static metrics like follower c
 ## 💡 Nebius Token Factory & NVIDIA Technology Feedback
 
 - **Nebius Token Factory:** The OpenAI-compatible API protocol made connecting NVIDIA open-source models frictionless. The high-performance GPU infrastructure provided rapid inference times ($\approx 850\text{ms}$) critical for real-time Trust & Safety intervention before abusive posts propagate.
-- **NVIDIA Nemotron:** Nemotron-70B proved exceptionally superior to traditional keyword filters and smaller LLMs at stylometric authorship attribution—successfully distinguishing between coincidental slang and genuine idiosyncratic ban evasion.
+- **NVIDIA Nemotron:** `nvidia/Nemotron-3-Ultra-550b-a55b` and `nvidia/Nemotron-3_5-Lightning` proved exceptionally superior to traditional keyword filters and smaller LLMs at stylometric authorship attribution—successfully distinguishing between coincidental slang and genuine idiosyncratic ban evasion, while autonomously classifying bot/troll intent from raw profile URLs.
 
 ---
 
