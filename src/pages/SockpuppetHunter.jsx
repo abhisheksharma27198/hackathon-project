@@ -1,77 +1,37 @@
 import { useState } from "react";
 import { matchSockpuppetWithNemotron } from "../services/nemotron.js";
-import { ShieldAlert, UserX, Cpu, Fingerprint, Lock, CheckCircle2, AlertTriangle, ArrowRight, Sparkles, Zap } from "lucide-react";
-
-const PRESETS = [
-  {
-    name: "Serial Troll Ban-Evasion",
-    victim: "sarah_researcher",
-    oldAccount: {
-      username: "troll_alpha_91",
-      bio: "Speaking truth to scammers. Unfiltered.",
-      recentPosts: "You are an absolute clown!! Stop lying to everyone you total fraud!!",
-    },
-    newAccount: {
-      username: "new_alpha_revenge",
-      bio: "They can't silence truth. Alt backup.",
-      recentPosts: "u thought getting me banned was gonna work?? Round 2 clown!! I told you I'd be back, you're still a fraud!!",
-      accountAgeDays: "0.2",
-    },
-  },
-  {
-    name: "Customer Support Impersonator",
-    victim: "BinanceExchange",
-    oldAccount: {
-      username: "BinanceDesk_Live01",
-      bio: "Official Helpdesk. DM with wallet issue for instant resolution.",
-      recentPosts: "Kindly send your ticket number and transaction hash directly to our DM for immediate refund verification.",
-    },
-    newAccount: {
-      username: "BinanceDesk_Live09",
-      bio: "Official 24/7 Resolution Portal. Authorized representative.",
-      recentPosts: "Kindly DM your ticket number and seed phrase confirmation to our resolution specialist immediately.",
-      accountAgeDays: "1",
-    },
-  },
-  {
-    name: "Authentic Unrelated Critic",
-    victim: "game_studio_x",
-    oldAccount: {
-      username: "angry_gamer_44",
-      bio: "Refund this broken game now.",
-      recentPosts: "Trash optimization, crashes every 5 minutes. Devs stole our money.",
-    },
-    newAccount: {
-      username: "casual_player_mike",
-      bio: "RPG fan, coffee drinker.",
-      recentPosts: "Does anyone know if patch 1.4 fixed the memory leak on RTX 4070? Still seeing stuttering in town.",
-      accountAgeDays: "420",
-    },
-  },
-];
+import { addSessionDetection, addSessionReport } from "../services/sessionStore.js";
+import { ShieldAlert, UserX, Cpu, Fingerprint, Lock, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 
 export default function SockpuppetHunter() {
-  const [victim, setVictim] = useState(PRESETS[0].victim);
-  const [oldAccount, setOldAccount] = useState(PRESETS[0].oldAccount);
-  const [newAccount, setNewAccount] = useState(PRESETS[0].newAccount);
+  const [victim, setVictim] = useState("");
+  const [oldAccount, setOldAccount] = useState({
+    username: "",
+    bio: "",
+    recentPosts: "",
+  });
+  const [newAccount, setNewAccount] = useState({
+    username: "",
+    bio: "",
+    recentPosts: "",
+    accountAgeDays: "",
+  });
 
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [frozenStatus, setFrozenStatus] = useState(null);
-
-  const handleLoadPreset = (preset) => {
-    setVictim(preset.victim);
-    setOldAccount(preset.oldAccount);
-    setNewAccount(preset.newAccount);
-    setAnalysis(null);
-    setFrozenStatus(null);
-  };
+  const [savedToSession, setSavedToSession] = useState(false);
 
   const handleRunAnalysis = async (e) => {
     e?.preventDefault();
+    if (!victim.trim() || !oldAccount.username.trim() || !newAccount.username.trim()) {
+      return;
+    }
+
     setLoading(true);
     setAnalysis(null);
     setFrozenStatus(null);
+    setSavedToSession(false);
 
     try {
       const res = await matchSockpuppetWithNemotron(oldAccount, newAccount, victim);
@@ -81,6 +41,42 @@ export default function SockpuppetHunter() {
       } else {
         setFrozenStatus("CLEARED");
       }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const victimFmt = victim.startsWith("@") ? victim : `@${victim}`;
+      const newFmt = newAccount.username.startsWith("@") ? newAccount.username : `@${newAccount.username}`;
+      const oldFmt = oldAccount.username.startsWith("@") ? oldAccount.username : `@${oldAccount.username}`;
+
+      // Save to Session Detections
+      addSessionDetection({
+        id: `SOCK-${Date.now()}`,
+        username: newFmt,
+        platform: "Twitter / X",
+        type: res.isSameActor ? "Sockpuppet Ban-Evasion" : "Unrelated User",
+        score: res.matchProbability,
+        status: res.isSameActor ? "Frozen" : "Safe",
+        action: res.isSameActor ? "ID Freeze Triggered" : "Cleared",
+        timestamp: `Just now (${timeStr})`,
+      });
+
+      // Save to Session Reports
+      addSessionReport({
+        id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
+        type: res.isSameActor ? "Sockpuppet Ban-Evasion" : "Authorship Non-Match",
+        primaryTarget: victimFmt,
+        perpetratorOld: `${oldFmt} (Suspended)`,
+        perpetratorNew: newFmt,
+        date: now.toISOString().split("T")[0],
+        score: res.matchProbability,
+        confidence: `${res.confidence}%`,
+        action: res.isSameActor ? "Instant ID Freeze Activated" : "Cleared",
+        status: res.isSameActor ? "Quarantined" : "Cleared",
+        stylometrics: res.stylometricMatches || [],
+        verdict: res.reasoningDossier || "Evaluated by NVIDIA Nemotron stylometric engine.",
+      });
+
+      setSavedToSession(true);
     } catch (err) {
       console.error(err);
     } finally {
@@ -103,35 +99,16 @@ export default function SockpuppetHunter() {
         <h1 className="page-title">Sockpuppet & Serial Troll Hunter</h1>
         <p className="page-subtitle">
           Detect when a previously blocked or banned abuser spins up a new burner account to harass the same victim.
-          NVIDIA Nemotron compares stylometric fingerprints, rhetorical syntax, and temporal retaliation patterns—triggering
+          NVIDIA Nemotron compares stylometric fingerprints and temporal retaliation patterns—triggering
           an <strong>instant automated freeze</strong> until the perpetrator provides official government ID.
         </p>
-      </div>
-
-      {/* Preset Selector */}
-      <div className="preset-strip">
-        <span className="preset-label">
-          <Sparkles size={15} /> Load Investigation Scenario:
-        </span>
-        <div className="preset-buttons">
-          {PRESETS.map((p) => (
-            <button
-              key={p.name}
-              type="button"
-              className={`preset-btn ${victim === p.victim ? "active" : ""}`}
-              onClick={() => handleLoadPreset(p)}
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Main Dual-Profile Comparison Grid */}
       <form onSubmit={handleRunAnalysis}>
         {/* Victim input */}
         <div className="card victim-card">
-          <label className="label">Target / Harassed Party Handle</label>
+          <label className="label">Target / Harassed Party Handle *</label>
           <div className="input-prefix-wrapper">
             <span className="prefix">@</span>
             <input
@@ -155,12 +132,12 @@ export default function SockpuppetHunter() {
             </div>
 
             <div className="form-field">
-              <label className="label">Suspended Username</label>
+              <label className="label">Suspended Username Handle *</label>
               <input
                 className="input"
                 value={oldAccount.username}
                 onChange={(e) => setOldAccount({ ...oldAccount, username: e.target.value })}
-                placeholder="e.g. troll_alpha_91"
+                placeholder="e.g. old_troll_handle"
                 required
               />
             </div>
@@ -171,18 +148,18 @@ export default function SockpuppetHunter() {
                 className="input"
                 value={oldAccount.bio}
                 onChange={(e) => setOldAccount({ ...oldAccount, bio: e.target.value })}
-                placeholder="Bio text..."
+                placeholder="Prior bio text or profile info..."
               />
             </div>
 
             <div className="form-field">
-              <label className="label">Harassing Text / Post History</label>
+              <label className="label">Harassing Text / Post Sample *</label>
               <textarea
                 className="textarea"
                 rows={4}
                 value={oldAccount.recentPosts}
                 onChange={(e) => setOldAccount({ ...oldAccount, recentPosts: e.target.value })}
-                placeholder="Example abusive or trolling posts made by this account..."
+                placeholder="Paste past abusive messages, insults, or trolling posts by Account A..."
                 required
               />
             </div>
@@ -197,24 +174,24 @@ export default function SockpuppetHunter() {
             </div>
 
             <div className="form-field">
-              <label className="label">New Suspicious Handle</label>
+              <label className="label">New Suspicious Handle *</label>
               <input
                 className="input"
                 value={newAccount.username}
                 onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })}
-                placeholder="e.g. new_alpha_revenge"
+                placeholder="e.g. new_alt_handle"
                 required
               />
             </div>
 
             <div className="form-row">
               <div className="form-field" style={{ flex: 1 }}>
-                <label className="label">Account Age (Days/Hours)</label>
+                <label className="label">Account Age in Days</label>
                 <input
                   className="input"
-                  value={newAccount.accountAgeDays || "1"}
+                  value={newAccount.accountAgeDays}
                   onChange={(e) => setNewAccount({ ...newAccount, accountAgeDays: e.target.value })}
-                  placeholder="e.g. 0.2 (created 4 hrs ago)"
+                  placeholder="e.g. 0.2 (created today)"
                 />
               </div>
               <div className="form-field" style={{ flex: 2 }}>
@@ -223,19 +200,19 @@ export default function SockpuppetHunter() {
                   className="input"
                   value={newAccount.bio}
                   onChange={(e) => setNewAccount({ ...newAccount, bio: e.target.value })}
-                  placeholder="Bio..."
+                  placeholder="New bio..."
                 />
               </div>
             </div>
 
             <div className="form-field">
-              <label className="label">New Harassing Text (bragging/insulting)</label>
+              <label className="label">New Harassing Text (bragging/insults) *</label>
               <textarea
                 className="textarea"
                 rows={4}
                 value={newAccount.recentPosts}
                 onChange={(e) => setNewAccount({ ...newAccount, recentPosts: e.target.value })}
-                placeholder="New posts directed at the victim..."
+                placeholder="Paste the new harassing posts, comments, or bragging messages..."
                 required
               />
             </div>
@@ -247,7 +224,7 @@ export default function SockpuppetHunter() {
             id="execute-match-btn"
             type="submit"
             className="btn btn-action-lg"
-            disabled={loading}
+            disabled={loading || !victim.trim() || !oldAccount.username.trim() || !newAccount.username.trim()}
             onClick={handleRunAnalysis}
           >
             {loading ? (
@@ -268,6 +245,12 @@ export default function SockpuppetHunter() {
             <div className="live-inference-badge" style={{ marginBottom: "16px" }}>
               <Zap size={14} className="text-accent" />
               <span>Live Nebius Token Factory Endpoint: <strong>{analysis.modelUsed}</strong></span>
+            </div>
+          )}
+
+          {savedToSession && (
+            <div className="session-saved-pill" style={{ marginBottom: "16px" }}>
+              <CheckCircle2 size={14} /> Added to current session Dashboard & Reports
             </div>
           )}
 
@@ -369,7 +352,7 @@ export default function SockpuppetHunter() {
                 <span><strong>Target Protected:</strong> @{victim}</span>
                 <span><strong>Primary Actor:</strong> @{oldAccount.username} (Suspended)</span>
                 <span><strong>Evading Burner:</strong> @{newAccount.username} (Frozen)</span>
-                <span><strong>Inference Engine:</strong> NVIDIA Nemotron-70B on Nebius Token Factory</span>
+                <span><strong>Inference Engine:</strong> NVIDIA Nemotron on Nebius Token Factory</span>
               </div>
             </div>
           </div>

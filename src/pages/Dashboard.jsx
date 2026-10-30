@@ -1,78 +1,32 @@
-import { useState } from "react";
-import { ShieldCheck, ShieldAlert, Lock, Zap, ArrowUpRight, Filter, Fingerprint } from "lucide-react";
-
-const STATS = [
-  { label: "Accounts Profiled", value: "1,428", delta: "+12% this week", icon: ShieldCheck, color: "green" },
-  { label: "Fake/Bot Accounts Flagged", value: "214", delta: "15.0% flag rate", icon: ShieldAlert, color: "red" },
-  { label: "Sockpuppet Evasions Intercepted", value: "48", delta: "32 serial trolls matched", icon: Fingerprint, color: "purple" },
-  { label: "Automated ID Freezes Issued", value: "31", delta: "100% prevented harassment", icon: Lock, color: "yellow" },
-];
-
-const RECENT_DETECTIONS = [
-  {
-    username: "@crypto_giveaway_9921",
-    platform: "Twitter / X",
-    type: "Phishing Bot",
-    score: 94,
-    status: "Quarantined",
-    action: "ID Freeze Triggered",
-    timestamp: "12 mins ago"
-  },
-  {
-    username: "@new_alpha_revenge",
-    platform: "Twitter / X",
-    type: "Serial Troll Sockpuppet",
-    score: 96,
-    status: "Frozen",
-    action: "Locked pending Gov ID",
-    timestamp: "24 mins ago"
-  },
-  {
-    username: "@free_followers_bot",
-    platform: "Instagram",
-    type: "Follow Churn",
-    score: 88,
-    status: "Flagged",
-    action: "Shadowbanned",
-    timestamp: "1 hr ago"
-  },
-  {
-    username: "@dr_elena_ai",
-    platform: "Twitter / X",
-    type: "Authentic Researcher",
-    score: 12,
-    status: "Safe",
-    action: "Approved",
-    timestamp: "2 hrs ago"
-  },
-  {
-    username: "@binance_helpdesk_fake",
-    platform: "Telegram",
-    type: "Brand Impersonator",
-    score: 92,
-    status: "Quarantined",
-    action: "Domain & Account Freeze",
-    timestamp: "3 hrs ago"
-  },
-  {
-    username: "@tech_enthusiast_dev",
-    platform: "LinkedIn",
-    type: "Legitimate User",
-    score: 18,
-    status: "Safe",
-    action: "Approved",
-    timestamp: "4 hrs ago"
-  },
-];
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { getSessionDetections, clearSessionData } from "../services/sessionStore.js";
+import { ShieldCheck, ShieldAlert, Lock, Zap, Fingerprint, Trash2, ArrowRight } from "lucide-react";
 
 export default function Dashboard() {
+  const [detections, setDetections] = useState([]);
   const [filter, setFilter] = useState("ALL");
 
-  const filteredDetections = RECENT_DETECTIONS.filter((item) => {
+  const loadData = () => {
+    setDetections(getSessionDetections());
+  };
+
+  useEffect(() => {
+    loadData();
+    window.addEventListener("nemotron_session_updated", loadData);
+    return () => window.removeEventListener("nemotron_session_updated", loadData);
+  }, []);
+
+  const totalProfiled = detections.length;
+  const flaggedCount = detections.filter((d) => d.score >= 70).length;
+  const sockpuppetCount = detections.filter((d) => (d.type || "").toLowerCase().includes("sockpuppet")).length;
+  const frozenCount = detections.filter((d) => (d.action || "").toLowerCase().includes("freeze") || (d.status || "").toLowerCase().includes("frozen")).length;
+
+  const filteredDetections = detections.filter((item) => {
     if (filter === "ALL") return true;
     if (filter === "FROZEN") return item.status === "Frozen" || item.status === "Quarantined";
     if (filter === "SAFE") return item.status === "Safe";
-    if (filter === "SOCKPUPPET") return item.type.includes("Sockpuppet");
+    if (filter === "SOCKPUPPET") return (item.type || "").toLowerCase().includes("sockpuppet");
     return true;
   });
 
@@ -80,50 +34,88 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="page-header-box">
         <div className="tag-row">
-          <span className="hero-tag">Live Platform Telemetry</span>
-          <span className="badge-tech">NVIDIA Nemotron Active Monitoring</span>
+          <span className="hero-tag">Current Session Telemetry</span>
+          <span className="badge-tech">Real-Time NVIDIA Nemotron Logs</span>
         </div>
-        <h1 className="page-title">Trust & Safety Intelligence Dashboard</h1>
-        <p className="page-subtitle">
-          Real-time forensic telemetry tracking bot farms, impersonators, and serial sockpuppet ban-evaders quarantined across connected platforms.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <h1 className="page-title">Trust & Safety Intelligence Dashboard</h1>
+            <p className="page-subtitle">
+              Displaying live accounts and serial troll evasions profiled during your current session.
+            </p>
+          </div>
+          {detections.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                if (confirm("Clear all session telemetry?")) {
+                  clearSessionData();
+                }
+              }}
+            >
+              <Trash2 size={14} /> Clear Session Data
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Primary Metrics Grid */}
+      {/* Primary Metrics Grid (Derived strictly from session data) */}
       <section className="grid grid-4 stats-grid">
-        {STATS.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <article key={stat.label} className={`stat-card stat-${stat.color}`}>
-              <div className="stat-icon-wrap">
-                <Icon size={22} />
-              </div>
-              <div className="stat-value">{stat.value}</div>
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-delta">{stat.delta}</div>
-            </article>
-          );
-        })}
+        <article className="stat-card stat-green">
+          <div className="stat-icon-wrap">
+            <ShieldCheck size={22} />
+          </div>
+          <div className="stat-value">{totalProfiled}</div>
+          <div className="stat-label">Accounts Profiled</div>
+          <div className="stat-delta">Current Session</div>
+        </article>
+
+        <article className="stat-card stat-red">
+          <div className="stat-icon-wrap">
+            <ShieldAlert size={22} />
+          </div>
+          <div className="stat-value">{flaggedCount}</div>
+          <div className="stat-label">High-Risk / Bots</div>
+          <div className="stat-delta">{totalProfiled > 0 ? `${Math.round((flaggedCount / totalProfiled) * 100)}% flag rate` : "No flags yet"}</div>
+        </article>
+
+        <article className="stat-card stat-purple">
+          <div className="stat-icon-wrap">
+            <Fingerprint size={22} />
+          </div>
+          <div className="stat-value">{sockpuppetCount}</div>
+          <div className="stat-label">Sockpuppets Intercepted</div>
+          <div className="stat-delta">{sockpuppetCount > 0 ? "Ban-evasion matched" : "None detected yet"}</div>
+        </article>
+
+        <article className="stat-card stat-yellow">
+          <div className="stat-icon-wrap">
+            <Lock size={22} />
+          </div>
+          <div className="stat-value">{frozenCount}</div>
+          <div className="stat-label">Automated ID Freezes</div>
+          <div className="stat-delta">{frozenCount > 0 ? "Protected victims" : "No freezes active"}</div>
+        </article>
       </section>
 
       {/* Middle Banner: Automated Protection Highlight */}
       <div className="highlight-banner">
         <div className="highlight-content">
           <div className="highlight-title">
-            <Zap size={18} className="text-accent" /> Automated Ban-Evasion Shield Active
+            <Zap size={18} className="text-accent" /> Active Session Protection
           </div>
           <p>
-            When abusive users attempt ban evasion by creating fresh burner accounts to target victims, 
-            the <strong>Nemotron Stylometric Engine</strong> correlates syntactic signatures and freezes the new account in under <strong>850ms</strong>.
+            Every account you analyze on <strong>Analyze</strong> or <strong>Troll Hunter</strong> is processed via NVIDIA Nemotron on Nebius Token Factory and dynamically recorded here in real-time.
           </p>
         </div>
         <div className="highlight-stats">
           <div className="mini-stat">
-            <span className="mini-num">98.4%</span>
-            <span className="mini-txt">Accuracy Rate</span>
+            <span className="mini-num">{detections.length}</span>
+            <span className="mini-txt">Live Logs</span>
           </div>
           <div className="mini-stat">
-            <span className="mini-num">&lt; 1.2s</span>
+            <span className="mini-num">&lt; 2.1s</span>
             <span className="mini-txt">Avg Inference</span>
           </div>
         </div>
@@ -133,84 +125,108 @@ export default function Dashboard() {
       <section className="card table-card">
         <div className="table-header-row">
           <div>
-            <h3>Real-Time Account Telemetry & Quarantine Log</h3>
-            <span className="muted">Latest automated decisions executed on Nebius GPU cluster</span>
+            <h3>Current Session Telemetry Log</h3>
+            <span className="muted">
+              {detections.length === 0
+                ? "No accounts analyzed in this session yet."
+                : `${detections.length} account${detections.length === 1 ? "" : "s"} logged in this session`}
+            </span>
           </div>
 
-          <div className="filter-pill-group">
-            <button
-              type="button"
-              className={`filter-btn ${filter === "ALL" ? "active" : ""}`}
-              onClick={() => setFilter("ALL")}
-            >
-              All Signals
-            </button>
-            <button
-              type="button"
-              className={`filter-btn ${filter === "FROZEN" ? "active" : ""}`}
-              onClick={() => setFilter("FROZEN")}
-            >
-              Frozen / Quarantined
-            </button>
-            <button
-              type="button"
-              className={`filter-btn ${filter === "SOCKPUPPET" ? "active" : ""}`}
-              onClick={() => setFilter("SOCKPUPPET")}
-            >
-              Sockpuppets
-            </button>
-            <button
-              type="button"
-              className={`filter-btn ${filter === "SAFE" ? "active" : ""}`}
-              onClick={() => setFilter("SAFE")}
-            >
-              Verified Safe
-            </button>
-          </div>
+          {detections.length > 0 && (
+            <div className="filter-pill-group">
+              <button
+                type="button"
+                className={`filter-btn ${filter === "ALL" ? "active" : ""}`}
+                onClick={() => setFilter("ALL")}
+              >
+                All ({detections.length})
+              </button>
+              <button
+                type="button"
+                className={`filter-btn ${filter === "FROZEN" ? "active" : ""}`}
+                onClick={() => setFilter("FROZEN")}
+              >
+                Frozen ({frozenCount})
+              </button>
+              <button
+                type="button"
+                className={`filter-btn ${filter === "SOCKPUPPET" ? "active" : ""}`}
+                onClick={() => setFilter("SOCKPUPPET")}
+              >
+                Sockpuppets ({sockpuppetCount})
+              </button>
+              <button
+                type="button"
+                className={`filter-btn ${filter === "SAFE" ? "active" : ""}`}
+                onClick={() => setFilter("SAFE")}
+              >
+                Safe
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="table-responsive">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Profile & Network</th>
-                <th>Classification</th>
-                <th>Risk Score</th>
-                <th>Enforcement Action</th>
-                <th>Recorded</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDetections.map((account) => (
-                <tr key={account.username}>
-                  <td>
-                    <div className="table-user-cell">
-                      <strong>{account.username}</strong>
-                      <span className="table-sub-tag">{account.platform}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="category-chip">{account.type}</span>
-                  </td>
-                  <td>
-                    <div className="score-cell">
-                      <span className={`score-digit ${account.score >= 70 ? "text-danger" : account.score >= 40 ? "text-warn" : "text-safe"}`}>
-                        {account.score}
-                      </span>
-                      <span className="score-denom">/100</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`status-badge-chip ${account.status.toLowerCase()}`}>
-                      {account.action}
-                    </span>
-                  </td>
-                  <td className="muted font-mono">{account.timestamp}</td>
+        {detections.length === 0 ? (
+          <div className="empty-state" style={{ padding: "50px 20px" }}>
+            <ShieldCheck size={48} className="muted-icon" />
+            <h4 style={{ margin: "12px 0 6px", color: "var(--text-bright)" }}>No Accounts Profiled in This Session Yet</h4>
+            <p className="muted" style={{ maxWidth: "480px", margin: "0 auto 20px" }}>
+              Run an individual profile evaluation or inspect a suspected serial troll to populate your live telemetry dashboard.
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <Link to="/analyze" className="btn btn-sm">
+                Analyze an Account <ArrowRight size={14} />
+              </Link>
+              <Link to="/sockpuppet-hunter" className="btn btn-secondary btn-sm">
+                Launch Troll Hunter <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Profile & Platform</th>
+                  <th>Classification</th>
+                  <th>Risk Score</th>
+                  <th>Enforcement Action</th>
+                  <th>Recorded</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredDetections.map((account) => (
+                  <tr key={account.id}>
+                    <td>
+                      <div className="table-user-cell">
+                        <strong>{account.username}</strong>
+                        <span className="table-sub-tag">{account.platform}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="category-chip">{account.type}</span>
+                    </td>
+                    <td>
+                      <div className="score-cell">
+                        <span className={`score-digit ${account.score >= 70 ? "text-danger" : account.score >= 40 ? "text-warn" : "text-safe"}`}>
+                          {account.score}
+                        </span>
+                        <span className="score-denom">/100</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-badge-chip ${account.status.toLowerCase()}`}>
+                        {account.action}
+                      </span>
+                    </td>
+                    <td className="muted font-mono">{account.timestamp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

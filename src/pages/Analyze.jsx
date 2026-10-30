@@ -1,71 +1,75 @@
 import { useState } from "react";
 import RiskBadge from "../components/RiskBadge.jsx";
 import { analyzeAccountWithNemotron } from "../services/nemotron.js";
-import { Cpu, ShieldCheck, Sparkles, AlertOctagon, CheckCircle2, Zap } from "lucide-react";
-
-const ANALYZE_PRESETS = [
-  {
-    name: "Crypto Phishing Bot",
-    data: {
-      username: "crypto_gift_drop9912",
-      platform: "Twitter / X",
-      followers: "14",
-      following: "2840",
-      posts: "1",
-      accountAgeDays: "3",
-      bio: "Official Airdrop Claim Portal! 100x gem verified. DM for instant claim & Telegram link in bio.",
-    },
-  },
-  {
-    name: "Astroturfing Sybil Node",
-    data: {
-      username: "trend_booster_441",
-      platform: "Twitter / X",
-      followers: "82",
-      following: "1940",
-      posts: "3",
-      accountAgeDays: "18",
-      bio: "Viral trends and social media marketing. Follow back 100% guarantee free promo.",
-    },
-  },
-  {
-    name: "Legitimate AI Researcher",
-    data: {
-      username: "dr_elena_ai",
-      platform: "Twitter / X",
-      followers: "8950",
-      following: "410",
-      posts: "820",
-      accountAgeDays: "1450",
-      bio: "Research Scientist working on Large Multimodal Models & Physical AI. PyTorch, CUDA, NeurIPS reviewer.",
-    },
-  },
-];
+import { addSessionDetection, addSessionReport } from "../services/sessionStore.js";
+import { Cpu, ShieldCheck, AlertOctagon, CheckCircle2, Zap } from "lucide-react";
 
 export default function Analyze() {
-  const [form, setForm] = useState(ANALYZE_PRESETS[0].data);
+  const [form, setForm] = useState({
+    username: "",
+    platform: "Twitter / X",
+    followers: "",
+    following: "",
+    posts: "",
+    accountAgeDays: "",
+    bio: "",
+  });
+
   const [modelType, setModelType] = useState("nvidia/Nemotron-3-Ultra-550b-a55b");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [savedToSession, setSavedToSession] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectPreset = (preset) => {
-    setForm(preset.data);
-    setResult(null);
-  };
-
   const handleAnalyze = async (e) => {
     e.preventDefault();
+    if (!form.username.trim()) return;
+
     setLoading(true);
     setResult(null);
+    setSavedToSession(false);
 
     try {
       const res = await analyzeAccountWithNemotron(form, modelType);
       setResult(res);
+
+      const usernameFormatted = form.username.startsWith("@") ? form.username : `@${form.username}`;
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      // Save to Session Detections
+      addSessionDetection({
+        id: `DET-${Date.now()}`,
+        username: usernameFormatted,
+        platform: form.platform,
+        type: res.score >= 75 ? "Likely Fake / Bot" : res.score >= 45 ? "Suspicious Profile" : "Authentic Profile",
+        score: res.score,
+        status: res.score >= 75 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Safe",
+        action: res.recommendedAction || "Analyzed",
+        timestamp: `Just now (${timeStr})`,
+      });
+
+      // Save to Session Reports
+      addSessionReport({
+        id: `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
+        type: "Single Account Forensic Audit",
+        primaryTarget: "Platform Integrity",
+        perpetratorOld: "N/A",
+        perpetratorNew: usernameFormatted,
+        date: now.toISOString().split("T")[0],
+        score: res.score,
+        confidence: `${res.confidence}%`,
+        action: res.recommendedAction || "Audited",
+        status: res.score >= 75 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Verified",
+        stylometrics: res.stylometricFlags || [],
+        verdict: res.reasons?.join("; ") || "Profile signals evaluated by NVIDIA Nemotron on Nebius.",
+      });
+
+      setSavedToSession(true);
     } catch (err) {
       console.error(err);
     } finally {
@@ -77,34 +81,16 @@ export default function Analyze() {
     <div className="analyze-page">
       <div className="page-header-box">
         <div className="tag-row">
-          <span className="hero-tag">NVIDIA Nemotron Forensics</span>
+          <span className="hero-tag">Live Session Analysis</span>
           <span className="badge-tech">
             <Cpu size={14} /> Active Model: {modelType.includes("Ultra") ? "Nemotron 3 Ultra (550B Reasoning)" : "Nemotron 3.5 Lightning"}
           </span>
         </div>
         <h1 className="page-title">Profile Signal & Botnet Analysis</h1>
         <p className="page-subtitle">
-          Examine public account indicators, metadata entropy, and semantic bio markers using live NVIDIA Nemotron inference hosted on Nebius GPU clusters.
+          Enter any public social media account signals below to evaluate with NVIDIA Nemotron on Nebius Token Factory.
+          All results are stored in your active session.
         </p>
-      </div>
-
-      {/* 1-Click Presets */}
-      <div className="preset-strip">
-        <span className="preset-label">
-          <Sparkles size={15} /> Quick Test Profiles:
-        </span>
-        <div className="preset-buttons">
-          {ANALYZE_PRESETS.map((p) => (
-            <button
-              key={p.name}
-              type="button"
-              className={`preset-btn ${form.username === p.data.username ? "active" : ""}`}
-              onClick={() => handleSelectPreset(p)}
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="grid grid-2">
@@ -117,7 +103,7 @@ export default function Analyze() {
                 className={`pill-btn ${modelType.includes("Ultra") ? "active" : ""}`}
                 onClick={() => setModelType("nvidia/Nemotron-3-Ultra-550b-a55b")}
               >
-                Nemotron 3 Ultra (550B Deep Reasoning)
+                Nemotron 3 Ultra (550B Reasoning)
               </button>
               <button
                 type="button"
@@ -131,13 +117,13 @@ export default function Analyze() {
 
           <div className="form-field">
             <label className="label" htmlFor="username">
-              Username Handle
+              Username Handle *
             </label>
             <input
               id="username"
               name="username"
               className="input"
-              placeholder="e.g. john_doe12345"
+              placeholder="e.g. twitter_handle or instagram_user"
               value={form.username}
               onChange={handleChange}
               required
@@ -159,6 +145,7 @@ export default function Analyze() {
               <option>Instagram</option>
               <option>LinkedIn</option>
               <option>Telegram</option>
+              <option>Facebook</option>
               <option>Other</option>
             </select>
           </div>
@@ -173,6 +160,7 @@ export default function Analyze() {
                 name="followers"
                 type="number"
                 className="input"
+                placeholder="0"
                 value={form.followers}
                 onChange={handleChange}
               />
@@ -187,6 +175,7 @@ export default function Analyze() {
                 name="following"
                 type="number"
                 className="input"
+                placeholder="0"
                 value={form.following}
                 onChange={handleChange}
               />
@@ -203,6 +192,7 @@ export default function Analyze() {
                 name="posts"
                 type="number"
                 className="input"
+                placeholder="0"
                 value={form.posts}
                 onChange={handleChange}
               />
@@ -217,6 +207,7 @@ export default function Analyze() {
                 name="accountAgeDays"
                 type="number"
                 className="input"
+                placeholder="e.g. 15"
                 value={form.accountAgeDays}
                 onChange={handleChange}
               />
@@ -231,13 +222,13 @@ export default function Analyze() {
               id="bio"
               name="bio"
               className="textarea"
-              placeholder="Paste the profile bio text or recent status..."
+              placeholder="Paste the profile bio text or recent post here..."
               value={form.bio}
               onChange={handleChange}
             />
           </div>
 
-          <button id="run-analyze-btn" className="btn btn-action-lg" type="submit" disabled={loading}>
+          <button id="run-analyze-btn" className="btn btn-action-lg" type="submit" disabled={loading || !form.username.trim()}>
             {loading ? (
               <>Running Live Nemotron Inference on Nebius...</>
             ) : (
@@ -259,7 +250,7 @@ export default function Analyze() {
             <div className="empty-state">
               <ShieldCheck size={48} className="muted-icon" />
               <p className="muted">
-                Select a preset profile or enter custom account metrics, then run detection to generate an explainable audit score.
+                Enter an account handle and profile signals to run real-time inference on Nebius Token Factory.
               </p>
             </div>
           )}
@@ -277,6 +268,12 @@ export default function Analyze() {
                 <div className="live-inference-badge">
                   <Zap size={14} className="text-accent" />
                   <span>Live Nebius Token Factory Endpoint: <strong>{result.modelUsed}</strong></span>
+                </div>
+              )}
+
+              {savedToSession && (
+                <div className="session-saved-pill">
+                  <CheckCircle2 size={14} /> Added to current session Dashboard & Reports
                 </div>
               )}
 

@@ -1044,6 +1044,20 @@ body {
   box-shadow: 0 0 12px rgba(118, 185, 0, 0.15);
 }
 
+.session-saved-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(118, 185, 0, 0.1);
+  border: 1px solid rgba(118, 185, 0, 0.3);
+  color: var(--green);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
 .result-score {
   font-size: 52px;
   font-weight: 900;
