@@ -84,15 +84,16 @@ export async function analyzeAccountWithNemotron(
               role: "system",
               content: `You are an elite Trust & Safety AI forensics specialist powered by NVIDIA Nemotron on Nebius Token Factory.
 Analyze the provided social media account metadata and bio for botnet activity, impersonation, astroturfing, or fake account signals.
+CRITICAL ENFORCEMENT POLICY: Any account with score >= 50 MUST have recommendedAction set to "⚡ Instant Freeze: Require Government ID" and verdict set to "High Risk / Likely Fake". If score < 50, recommendedAction can be "Approve" or "Monitor".
 Respond ONLY with a JSON object in this exact schema without preamble or conversational text:
 {
   "score": <integer 0-100>,
   "confidence": <integer 0-100>,
-  "verdict": "<Safe | Suspicious | High Risk / Likely Fake>",
+  "verdict": "<Safe | High Risk / Likely Fake>",
   "reasons": ["<reason1>", "<reason2>", "<reason3>"],
   "stylometricFlags": ["<flag1>", "<flag2>"],
   "behavioralAnomalies": ["<anomaly1>", "<anomaly2>"],
-  "recommendedAction": "<Approve | Flag for Review | Enforce ID Freeze | Immediate Ban>"
+  "recommendedAction": "<⚡ Instant Freeze: Require Government ID | Approve>"
 }`,
             },
             {
@@ -159,6 +160,7 @@ export async function matchSockpuppetWithNemotron(
               content: `You are an expert Cyber-Forensics Investigator specialized in Troll Ring Profiling, Stylometric Authorship Attribution, and Ban Evasion Detection.
 You are comparing two social media accounts to determine if Account B is a sockpuppet / ban-evasion alt of Account A who previously abused Target Victim "${targetVictim}".
 Evaluate lexical choices, punctuation quirks, emotional velocity, temporal proximity, and targeting fixation.
+CRITICAL ENFORCEMENT POLICY: Any match with matchProbability >= 50 MUST be assigned isSameActor: true, enforcementAction: "⚡ Instant Freeze: Require Government ID", and threatSeverity: "Critical".
 Respond ONLY with a JSON object in this schema without preamble:
 {
   "matchProbability": <integer 0-100>,
@@ -166,8 +168,8 @@ Respond ONLY with a JSON object in this schema without preamble:
   "confidence": <integer 0-100>,
   "stylometricMatches": ["<shared slang, syntax, punctuation quirk, insult style>"],
   "behavioralCorrelations": ["<timing anomaly, targeting fixation, retaliation cue>"],
-  "threatSeverity": "<Critical | High | Moderate | Low>",
-  "enforcementAction": "<Instant ID Freeze & Quarantine | Mandatory CAPTCHA | Shadowban | Clear>",
+  "threatSeverity": "<Critical | Low>",
+  "enforcementAction": "<⚡ Instant Freeze: Require Government ID | Clear>",
   "reasoningDossier": "<concise forensic explanation of how the pattern connects Account B to Account A>"
 }`,
             },
@@ -415,6 +417,7 @@ Determine:
 2. Is this account actively trolling, harassing, astroturfing, or doing harm?
 3. Calculate an overall Risk Score (0-100) and Bot/Fraud Probability.
 4. Output recommended policy enforcement.
+CRITICAL ENFORCEMENT POLICY: Any account with score >= 50 MUST have recommendedAction: "⚡ Instant Freeze: Require Government ID" and verdict: "Quarantine & Freeze ID". If score < 50, recommendedAction: "Clear & Approve".
 
 Respond ONLY with a JSON object in this exact schema without conversational text:
 {
@@ -425,10 +428,10 @@ Respond ONLY with a JSON object in this exact schema without conversational text
   "accountType": "<Bot Farm | Serial Troll | Phishing Node | High-Risk Impersonator | Legitimate User>",
   "isTrollingOrAbusive": <boolean>,
   "abuseSeverity": "<Critical | High | Moderate | None>",
-  "verdict": "<Quarantine & Freeze ID | Flag for Moderation | Safe to Interact>",
+  "verdict": "<Quarantine & Freeze ID | Safe to Interact>",
   "reasons": ["<reason1>", "<reason2>", "<reason3>"],
   "behavioralAnomalies": ["<anomaly1>", "<anomaly2>"],
-  "recommendedAction": "<⚡ Instant Freeze: Require Government ID | Shadowban & Demote | Clear & Approve>",
+  "recommendedAction": "<⚡ Instant Freeze: Require Government ID | Clear & Approve>",
   "forensicSummary": "<concise explanation of what this account was detected doing>"
 }`,
             },

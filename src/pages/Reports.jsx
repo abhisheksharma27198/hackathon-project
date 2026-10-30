@@ -89,7 +89,7 @@ export default function Reports() {
                     </div>
                   </div>
                   <div className="report-item-right">
-                    <span className={`score-tag ${report.score >= 70 ? "text-danger" : report.score >= 40 ? "text-warn" : "text-safe"}`}>
+                    <span className={`score-tag ${report.score >= 50 ? "text-danger" : report.score >= 30 ? "text-warn" : "text-safe"}`}>
                       {report.score}/100
                     </span>
                   </div>
@@ -112,7 +112,7 @@ export default function Reports() {
               <div className="report-metrics-row">
                 <div className="metric-box">
                   <span className="metric-label">Fraud/Risk Score</span>
-                  <span className={`metric-val ${selected.score >= 70 ? "text-danger" : "text-warn"}`}>{selected.score}/100</span>
+                  <span className={`metric-val ${selected.score >= 50 ? "text-danger" : "text-warn"}`}>{selected.score}/100</span>
                 </div>
                 <div className="metric-box">
                   <span className="metric-label">Nemotron Confidence</span>

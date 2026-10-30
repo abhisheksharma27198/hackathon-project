@@ -18,9 +18,9 @@ export default function Dashboard() {
   }, []);
 
   const totalProfiled = detections.length;
-  const flaggedCount = detections.filter((d) => d.score >= 70).length;
+  const flaggedCount = detections.filter((d) => d.score >= 50).length;
   const sockpuppetCount = detections.filter((d) => (d.type || "").toLowerCase().includes("sockpuppet")).length;
-  const frozenCount = detections.filter((d) => (d.action || "").toLowerCase().includes("freeze") || (d.status || "").toLowerCase().includes("frozen")).length;
+  const frozenCount = detections.filter((d) => d.score >= 50 || (d.action || "").toLowerCase().includes("freeze") || (d.status || "").toLowerCase().includes("frozen")).length;
 
   const filteredDetections = detections.filter((item) => {
     if (filter === "ALL") return true;
@@ -209,7 +209,7 @@ export default function Dashboard() {
                     </td>
                     <td>
                       <div className="score-cell">
-                        <span className={`score-digit ${account.score >= 70 ? "text-danger" : account.score >= 40 ? "text-warn" : "text-safe"}`}>
+                        <span className={`score-digit ${account.score >= 50 ? "text-danger" : account.score >= 30 ? "text-warn" : "text-safe"}`}>
                           {account.score}
                         </span>
                         <span className="score-denom">/100</span>

@@ -36,7 +36,8 @@ export default function SockpuppetHunter() {
     try {
       const res = await matchSockpuppetWithNemotron(oldAccount, newAccount, victim);
       setAnalysis(res);
-      if (res.isSameActor) {
+      const isFrozen = res.isSameActor || res.matchProbability >= 50;
+      if (isFrozen) {
         setFrozenStatus("QUARANTINED_ID_REQUIRED");
       } else {
         setFrozenStatus("CLEARED");
@@ -53,25 +54,25 @@ export default function SockpuppetHunter() {
         id: `SOCK-${Date.now()}`,
         username: newFmt,
         platform: "Twitter / X",
-        type: res.isSameActor ? "Sockpuppet Ban-Evasion" : "Unrelated User",
+        type: isFrozen ? "Sockpuppet Ban-Evasion" : "Unrelated User",
         score: res.matchProbability,
-        status: res.isSameActor ? "Frozen" : "Safe",
-        action: res.isSameActor ? "ID Freeze Triggered" : "Cleared",
+        status: isFrozen ? "Frozen" : "Safe",
+        action: isFrozen ? "⚡ Instant Freeze: Require Government ID" : "Cleared",
         timestamp: `Just now (${timeStr})`,
       });
 
       // Save to Session Reports
       addSessionReport({
         id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
-        type: res.isSameActor ? "Sockpuppet Ban-Evasion" : "Authorship Non-Match",
+        type: isFrozen ? "Sockpuppet Ban-Evasion" : "Authorship Non-Match",
         primaryTarget: victimFmt,
         perpetratorOld: `${oldFmt} (Suspended)`,
         perpetratorNew: newFmt,
         date: now.toISOString().split("T")[0],
         score: res.matchProbability,
         confidence: `${res.confidence}%`,
-        action: res.isSameActor ? "Instant ID Freeze Activated" : "Cleared",
-        status: res.isSameActor ? "Quarantined" : "Cleared",
+        action: isFrozen ? "⚡ Instant Freeze: Require Government ID" : "Cleared",
+        status: isFrozen ? "Frozen" : "Cleared",
         stylometrics: res.stylometricMatches || [],
         verdict: res.reasoningDossier || "Evaluated by NVIDIA Nemotron stylometric engine.",
       });

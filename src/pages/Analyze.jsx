@@ -48,25 +48,25 @@ export default function Analyze() {
         id: `DET-${Date.now()}`,
         username: res.handle,
         platform: res.platform,
-        type: res.accountType || (res.score >= 70 ? "Likely Fake / Bot" : "Safe Profile"),
+        type: res.score >= 50 ? (res.accountType || "High-Risk Threat / Bot") : "Safe Profile",
         score: res.score,
-        status: res.score >= 70 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Safe",
-        action: res.recommendedAction || "Analyzed",
+        status: res.score >= 50 ? "Frozen" : "Safe",
+        action: res.score >= 50 ? "⚡ Instant Freeze: Require Government ID" : (res.recommendedAction || "Approved"),
         timestamp: `Just now (${timeStr})`,
       });
 
       // Save to Session Reports
       addSessionReport({
         id: `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
-        type: res.accountType || "Autonomous URL Profile Scan",
+        type: res.score >= 50 ? (res.accountType || "High-Risk Threat / Bot") : "Verified Safe Profile",
         primaryTarget: "Platform Integrity",
         perpetratorOld: "N/A",
         perpetratorNew: res.handle,
         date: now.toISOString().split("T")[0],
         score: res.score,
         confidence: `${res.confidence}%`,
-        action: res.recommendedAction || "Audited",
-        status: res.score >= 70 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Verified",
+        action: res.score >= 50 ? "⚡ Instant Freeze: Require Government ID" : (res.recommendedAction || "Approved"),
+        status: res.score >= 50 ? "Frozen" : "Verified",
         stylometrics: res.reasons || [],
         verdict: res.forensicSummary || "Evaluated by NVIDIA Nemotron on Nebius Token Factory.",
       });
@@ -99,26 +99,25 @@ export default function Analyze() {
         id: `DET-${Date.now()}`,
         username: usernameFormatted,
         platform: manualForm.platform,
-        type: res.score >= 75 ? "Likely Fake / Bot" : res.score >= 45 ? "Suspicious Profile" : "Authentic Profile",
+        type: res.score >= 50 ? "High-Risk Threat / Bot" : "Authentic Profile",
         score: res.score,
-        status: res.score >= 75 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Safe",
-        action: res.recommendedAction || "Analyzed",
+        status: res.score >= 50 ? "Frozen" : "Safe",
+        action: res.score >= 50 ? "⚡ Instant Freeze: Require Government ID" : (res.recommendedAction || "Approved"),
         timestamp: `Just now (${timeStr})`,
       });
 
       addSessionReport({
         id: `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
-        type: "Single Account Forensic Audit",
+        type: res.score >= 50 ? "High-Risk Threat / Bot" : "Single Account Forensic Audit",
         primaryTarget: "Platform Integrity",
         perpetratorOld: "N/A",
         perpetratorNew: usernameFormatted,
         date: now.toISOString().split("T")[0],
         score: res.score,
         confidence: `${res.confidence}%`,
-        action: res.recommendedAction || "Audited",
-        status: res.score >= 75 ? "Quarantined" : res.score >= 45 ? "Flagged" : "Verified",
+        action: res.score >= 50 ? "⚡ Instant Freeze: Require Government ID" : (res.recommendedAction || "Approved"),
+        status: res.score >= 50 ? "Frozen" : "Verified",
         stylometrics: res.stylometricFlags || [],
-        verdict: res.reasons?.join("; ") || "Profile signals evaluated by NVIDIA Nemotron on Nebius.",
       });
 
       setSavedToSession(true);
@@ -386,7 +385,7 @@ export default function Analyze() {
 
               <div className="result-header-metric">
                 <div>
-                  <div className={`result-score ${result.score >= 70 ? "text-danger" : result.score >= 40 ? "text-warn" : "text-safe"}`}>
+                  <div className={`result-score ${result.score >= 50 ? "text-danger" : result.score >= 30 ? "text-warn" : "text-safe"}`}>
                     {result.score}<span className="score-denom">/100</span>
                   </div>
                   <span className="muted">Overall Fraud / Bot Risk Index</span>
@@ -398,9 +397,9 @@ export default function Analyze() {
               </div>
 
               {/* Recommended Action Pill */}
-              <div className={`action-verdict-box ${result.score >= 70 ? "verdict-freeze" : "verdict-ok"}`}>
+              <div className={`action-verdict-box ${result.score >= 50 ? "verdict-freeze" : "verdict-ok"}`}>
                 <div className="verdict-icon">
-                  {result.score >= 70 ? <AlertOctagon size={20} /> : <CheckCircle2 size={20} />}
+                  {result.score >= 50 ? <AlertOctagon size={20} /> : <CheckCircle2 size={20} />}
                 </div>
                 <div>
                   <strong>Recommended Policy Action:</strong> {result.recommendedAction}
