@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import Home from "./pages/Home.jsx";
 import Analyze from "./pages/Analyze.jsx";
+import SockpuppetHunter from "./pages/SockpuppetHunter.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Reports from "./pages/Reports.jsx";
 import About from "./pages/About.jsx";
@@ -16,6 +17,7 @@ export default function App() {
       <main className="main">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/sockpuppet-hunter" element={<SockpuppetHunter />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/reports" element={<Reports />} />

@@ -1,90 +1,137 @@
 import { useState } from "react";
 import RiskBadge from "../components/RiskBadge.jsx";
+import { analyzeAccountWithNemotron } from "../services/nemotron.js";
+import { Cpu, ShieldCheck, Sparkles, AlertOctagon, CheckCircle2 } from "lucide-react";
 
-function calculateMockRisk(account) {
-  let score = 10;
-
-  const username = account.username.toLowerCase();
-
-  if (/\d{4,}/.test(username)) score += 20;
-  if (/(bot|fake|spam|official|verify|free|follow)/.test(username)) score += 25;
-  if (account.followers > 0 && account.following / account.followers > 5) {
-    score += 25;
-  }
-  if (account.posts < 5) score += 15;
-  if (!account.bio || account.bio.trim().length < 10) score += 10;
-  if (account.accountAgeDays < 30) score += 20;
-
-  return Math.min(score, 98);
-}
+const ANALYZE_PRESETS = [
+  {
+    name: "Crypto Phishing Bot",
+    data: {
+      username: "crypto_gift_drop9912",
+      platform: "Twitter / X",
+      followers: "14",
+      following: "2840",
+      posts: "1",
+      accountAgeDays: "3",
+      bio: "Official Airdrop Claim Portal! 100x gem verified. DM for instant claim & Telegram link in bio.",
+    },
+  },
+  {
+    name: "Astroturfing Sybil Node",
+    data: {
+      username: "trend_booster_441",
+      platform: "Twitter / X",
+      followers: "82",
+      following: "1940",
+      posts: "3",
+      accountAgeDays: "18",
+      bio: "Viral trends and social media marketing. Follow back 100% guarantee free promo.",
+    },
+  },
+  {
+    name: "Legitimate AI Researcher",
+    data: {
+      username: "dr_elena_ai",
+      platform: "Twitter / X",
+      followers: "8950",
+      following: "410",
+      posts: "820",
+      accountAgeDays: "1450",
+      bio: "Research Scientist working on Large Multimodal Models & Physical AI. PyTorch, CUDA, NeurIPS reviewer.",
+    },
+  },
+];
 
 export default function Analyze() {
-  const [form, setForm] = useState({
-    username: "",
-    platform: "Twitter / X",
-    followers: "",
-    following: "",
-    posts: "",
-    accountAgeDays: "",
-    bio: "",
-  });
-
+  const [form, setForm] = useState(ANALYZE_PRESETS[0].data);
+  const [modelType, setModelType] = useState("nvidia/llama-3.1-nemotron-70b-instruct");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAnalyze = (event) => {
-    event.preventDefault();
+  const handleSelectPreset = (preset) => {
+    setForm(preset.data);
+    setResult(null);
+  };
+
+  const handleAnalyze = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setResult(null);
 
-    setTimeout(() => {
-      const account = {
-        username: form.username || "unknown_user",
-        followers: Number(form.followers || 0),
-        following: Number(form.following || 0),
-        posts: Number(form.posts || 0),
-        accountAgeDays: Number(form.accountAgeDays || 0),
-        bio: form.bio,
-      };
-
-      const score = calculateMockRisk(account);
-
-      setResult({
-        score,
-        confidence: Math.min(99, 65 + Math.round(score / 5)),
-        reasons: [
-          score >= 75 && "High-risk username or profile pattern detected",
-          account.accountAgeDays < 30 && "Very new account",
-          account.posts < 5 && "Very low posting activity",
-          account.following / Math.max(account.followers, 1) > 5 &&
-            "Unusual follower-to-following ratio",
-          (!account.bio || account.bio.trim().length < 10) &&
-            "Incomplete or low-quality profile information",
-        ].filter(Boolean),
-      });
-
+    try {
+      const res = await analyzeAccountWithNemotron(form, modelType);
+      setResult(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (
-    <>
-      <h1 className="page-title">Analyze Account</h1>
-      <p className="page-subtitle">
-        Enter public profile signals to generate a fake-account risk score.
-        Powered by AI analysis with transparent scoring factors.
-      </p>
+    <div className="analyze-page">
+      <div className="page-header-box">
+        <div className="tag-row">
+          <span className="hero-tag">NVIDIA Nemotron Forensics</span>
+          <span className="badge-tech">
+            <Cpu size={14} /> Model: {modelType.includes("70b") ? "Nemotron 70B Deep Reasoning" : "Nemotron 3.5 Lightning"}
+          </span>
+        </div>
+        <h1 className="page-title">Profile Signal & Botnet Analysis</h1>
+        <p className="page-subtitle">
+          Examine public account indicators, metadata entropy, and semantic bio markers using NVIDIA Nemotron on Nebius Token Factory.
+        </p>
+      </div>
+
+      {/* 1-Click Presets */}
+      <div className="preset-strip">
+        <span className="preset-label">
+          <Sparkles size={15} /> Quick Test Profiles:
+        </span>
+        <div className="preset-buttons">
+          {ANALYZE_PRESETS.map((p) => (
+            <button
+              key={p.name}
+              type="button"
+              className={`preset-btn ${form.username === p.data.username ? "active" : ""}`}
+              onClick={() => handleSelectPreset(p)}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-2">
         <form className="card" onSubmit={handleAnalyze}>
+          <div className="model-selector-row">
+            <label className="label">Nemotron Inference Tier</label>
+            <div className="pill-group">
+              <button
+                type="button"
+                className={`pill-btn ${modelType.includes("70b") ? "active" : ""}`}
+                onClick={() => setModelType("nvidia/llama-3.1-nemotron-70b-instruct")}
+              >
+                Nemotron 70B (Deep Reasoning)
+              </button>
+              <button
+                type="button"
+                className={`pill-btn ${!modelType.includes("70b") ? "active" : ""}`}
+                onClick={() => setModelType("nebius/nvidia/Nemotron-3_5-Lightning")}
+              >
+                Nemotron Lightning (Fast Triage)
+              </button>
+            </div>
+          </div>
+
           <div className="form-field">
             <label className="label" htmlFor="username">
-              Username
+              Username Handle
             </label>
             <input
               id="username"
@@ -99,7 +146,7 @@ export default function Analyze() {
 
           <div className="form-field">
             <label className="label" htmlFor="platform">
-              Platform
+              Platform Target
             </label>
             <select
               id="platform"
@@ -111,7 +158,7 @@ export default function Analyze() {
               <option>Twitter / X</option>
               <option>Instagram</option>
               <option>LinkedIn</option>
-              <option>Facebook</option>
+              <option>Telegram</option>
               <option>Other</option>
             </select>
           </div>
@@ -119,7 +166,7 @@ export default function Analyze() {
           <div className="form-row">
             <div>
               <label className="label" htmlFor="followers">
-                Followers
+                Followers Count
               </label>
               <input
                 id="followers"
@@ -133,7 +180,7 @@ export default function Analyze() {
 
             <div>
               <label className="label" htmlFor="following">
-                Following
+                Following Count
               </label>
               <input
                 id="following"
@@ -149,7 +196,7 @@ export default function Analyze() {
           <div className="form-row">
             <div>
               <label className="label" htmlFor="posts">
-                Posts
+                Total Posts / Content
               </label>
               <input
                 id="posts"
@@ -163,7 +210,7 @@ export default function Analyze() {
 
             <div>
               <label className="label" htmlFor="accountAgeDays">
-                Account age in days
+                Account Age (Days)
               </label>
               <input
                 id="accountAgeDays"
@@ -178,57 +225,114 @@ export default function Analyze() {
 
           <div className="form-field">
             <label className="label" htmlFor="bio">
-              Bio
+              Account Biography & Profile Text
             </label>
             <textarea
               id="bio"
               name="bio"
               className="textarea"
-              placeholder="Paste the account bio here..."
+              placeholder="Paste the profile bio text or recent status..."
               value={form.bio}
               onChange={handleChange}
             />
           </div>
 
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Analyzing with Nemotron..." : "Run Detection"}
+          <button className="btn btn-action-lg" type="submit" disabled={loading}>
+            {loading ? (
+              <>Running Nemotron Inference on Nebius...</>
+            ) : (
+              <>
+                <Cpu size={18} /> Analyze with NVIDIA Nemotron
+              </>
+            )}
           </button>
         </form>
 
+        {/* Results Column */}
         <section className="card result-card">
-          <h3>Detection Result</h3>
+          <div className="card-header-line">
+            <h3>Detection Results & Audit Trace</h3>
+            {result && <RiskBadge score={result.score} />}
+          </div>
 
           {!result && !loading && (
-            <p className="muted">
-              Fill in the account details and run detection to see the result.
-            </p>
+            <div className="empty-state">
+              <ShieldCheck size={48} className="muted-icon" />
+              <p className="muted">
+                Select a preset profile or enter custom account metrics, then run detection to generate an explainable audit score.
+              </p>
+            </div>
           )}
 
-          {loading && <p className="muted">Analyzing account signals with NVIDIA Nemotron on Nebius...</p>}
+          {loading && (
+            <div className="loading-state">
+              <div className="spinner" />
+              <p>Evaluating account entropy & stylometrics on Nebius Token Factory GPU cluster...</p>
+            </div>
+          )}
 
           {result && (
-            <>
-              <div className="result-score">{result.score}/100</div>
-              <RiskBadge score={result.score} />
+            <div className="result-content-body">
+              <div className="result-header-metric">
+                <div>
+                  <div className={`result-score ${result.score >= 70 ? "text-danger" : result.score >= 40 ? "text-warn" : "text-safe"}`}>
+                    {result.score}<span className="score-denom">/100</span>
+                  </div>
+                  <span className="muted">Overall Fraud/Bot Risk Index</span>
+                </div>
+                <div className="confidence-pill">
+                  <span>Confidence:</span>
+                  <strong>{result.confidence}%</strong>
+                </div>
+              </div>
 
-              <p className="muted">
-                Model confidence: <strong>{result.confidence}%</strong>
-              </p>
+              {/* Recommended Action Pill */}
+              <div className={`action-verdict-box ${result.score >= 70 ? "verdict-freeze" : "verdict-ok"}`}>
+                <div className="verdict-icon">
+                  {result.score >= 70 ? <AlertOctagon size={20} /> : <CheckCircle2 size={20} />}
+                </div>
+                <div>
+                  <strong>Recommended Policy Action:</strong> {result.recommendedAction}
+                </div>
+              </div>
 
-              <h4>Why this score?</h4>
-              <ul>
-                {result.reasons.length === 0 ? (
-                  <li>No major suspicious signals found.</li>
-                ) : (
-                  result.reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))
-                )}
-              </ul>
-            </>
+              {/* Explanation Factors */}
+              <div className="factors-section">
+                <h4>Signal Breakdown:</h4>
+                <ul className="factors-list">
+                  {result.reasons?.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Stylometric Flags */}
+              {result.stylometricFlags?.length > 0 && (
+                <div className="factors-section">
+                  <h4>Linguistic & Stylometric Observations:</h4>
+                  <div className="tag-cloud">
+                    {result.stylometricFlags.map((flag, i) => (
+                      <span key={i} className="chip chip-purple">{flag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Behavioral Anomalies */}
+              {result.behavioralAnomalies?.length > 0 && (
+                <div className="factors-section">
+                  <h4>Behavioral Graph Signals:</h4>
+                  <div className="tag-cloud">
+                    {result.behavioralAnomalies.map((ano, i) => (
+                      <span key={i} className="chip chip-blue">{ano}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }
