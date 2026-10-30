@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { matchSockpuppetWithNemotron } from "../services/nemotron.js";
-import { ShieldAlert, UserX, Cpu, Fingerprint, Lock, CheckCircle2, AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
+import { ShieldAlert, UserX, Cpu, Fingerprint, Lock, CheckCircle2, AlertTriangle, ArrowRight, Sparkles, Zap } from "lucide-react";
 
 const PRESETS = [
   {
@@ -243,7 +243,13 @@ export default function SockpuppetHunter() {
         </div>
 
         <div className="action-row">
-          <button type="submit" className="btn btn-action-lg" disabled={loading}>
+          <button
+            id="execute-match-btn"
+            type="submit"
+            className="btn btn-action-lg"
+            disabled={loading}
+            onClick={handleRunAnalysis}
+          >
             {loading ? (
               <>Running Stylometric Correlation on Nebius...</>
             ) : (
@@ -258,6 +264,13 @@ export default function SockpuppetHunter() {
       {/* Forensic Results Panel */}
       {analysis && (
         <div className="analysis-results-section">
+          {analysis.isLiveInference && (
+            <div className="live-inference-badge" style={{ marginBottom: "16px" }}>
+              <Zap size={14} className="text-accent" />
+              <span>Live Nebius Token Factory Endpoint: <strong>{analysis.modelUsed}</strong></span>
+            </div>
+          )}
+
           {/* Automated Enforcement Status Banner */}
           {frozenStatus === "QUARANTINED_ID_REQUIRED" ? (
             <div className="enforcement-banner freeze-alert">

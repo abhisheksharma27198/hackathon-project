@@ -1,7 +1,7 @@
 import { useState } from "react";
 import RiskBadge from "../components/RiskBadge.jsx";
 import { analyzeAccountWithNemotron } from "../services/nemotron.js";
-import { Cpu, ShieldCheck, Sparkles, AlertOctagon, CheckCircle2 } from "lucide-react";
+import { Cpu, ShieldCheck, Sparkles, AlertOctagon, CheckCircle2, Zap } from "lucide-react";
 
 const ANALYZE_PRESETS = [
   {
@@ -44,7 +44,7 @@ const ANALYZE_PRESETS = [
 
 export default function Analyze() {
   const [form, setForm] = useState(ANALYZE_PRESETS[0].data);
-  const [modelType, setModelType] = useState("nvidia/llama-3.1-nemotron-70b-instruct");
+  const [modelType, setModelType] = useState("nvidia/Nemotron-3-Ultra-550b-a55b");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -79,12 +79,12 @@ export default function Analyze() {
         <div className="tag-row">
           <span className="hero-tag">NVIDIA Nemotron Forensics</span>
           <span className="badge-tech">
-            <Cpu size={14} /> Model: {modelType.includes("70b") ? "Nemotron 70B Deep Reasoning" : "Nemotron 3.5 Lightning"}
+            <Cpu size={14} /> Active Model: {modelType.includes("Ultra") ? "Nemotron 3 Ultra (550B Reasoning)" : "Nemotron 3.5 Lightning"}
           </span>
         </div>
         <h1 className="page-title">Profile Signal & Botnet Analysis</h1>
         <p className="page-subtitle">
-          Examine public account indicators, metadata entropy, and semantic bio markers using NVIDIA Nemotron on Nebius Token Factory.
+          Examine public account indicators, metadata entropy, and semantic bio markers using live NVIDIA Nemotron inference hosted on Nebius GPU clusters.
         </p>
       </div>
 
@@ -110,21 +110,21 @@ export default function Analyze() {
       <div className="grid grid-2">
         <form className="card" onSubmit={handleAnalyze}>
           <div className="model-selector-row">
-            <label className="label">Nemotron Inference Tier</label>
+            <label className="label">Nemotron Inference Tier on Nebius</label>
             <div className="pill-group">
               <button
                 type="button"
-                className={`pill-btn ${modelType.includes("70b") ? "active" : ""}`}
-                onClick={() => setModelType("nvidia/llama-3.1-nemotron-70b-instruct")}
+                className={`pill-btn ${modelType.includes("Ultra") ? "active" : ""}`}
+                onClick={() => setModelType("nvidia/Nemotron-3-Ultra-550b-a55b")}
               >
-                Nemotron 70B (Deep Reasoning)
+                Nemotron 3 Ultra (550B Deep Reasoning)
               </button>
               <button
                 type="button"
-                className={`pill-btn ${!modelType.includes("70b") ? "active" : ""}`}
-                onClick={() => setModelType("nebius/nvidia/Nemotron-3_5-Lightning")}
+                className={`pill-btn ${!modelType.includes("Ultra") ? "active" : ""}`}
+                onClick={() => setModelType("nvidia/Nemotron-3_5-Lightning")}
               >
-                Nemotron Lightning (Fast Triage)
+                Nemotron 3.5 Lightning (Fast Triage)
               </button>
             </div>
           </div>
@@ -237,9 +237,9 @@ export default function Analyze() {
             />
           </div>
 
-          <button className="btn btn-action-lg" type="submit" disabled={loading}>
+          <button id="run-analyze-btn" className="btn btn-action-lg" type="submit" disabled={loading}>
             {loading ? (
-              <>Running Nemotron Inference on Nebius...</>
+              <>Running Live Nemotron Inference on Nebius...</>
             ) : (
               <>
                 <Cpu size={18} /> Analyze with NVIDIA Nemotron
@@ -267,12 +267,19 @@ export default function Analyze() {
           {loading && (
             <div className="loading-state">
               <div className="spinner" />
-              <p>Evaluating account entropy & stylometrics on Nebius Token Factory GPU cluster...</p>
+              <p>Evaluating account entropy & stylometrics on Nebius GPU cluster ({modelType.includes("Ultra") ? "Nemotron-3-Ultra" : "Nemotron-Lightning"})...</p>
             </div>
           )}
 
           {result && (
             <div className="result-content-body">
+              {result.isLiveInference && (
+                <div className="live-inference-badge">
+                  <Zap size={14} className="text-accent" />
+                  <span>Live Nebius Token Factory Endpoint: <strong>{result.modelUsed}</strong></span>
+                </div>
+              )}
+
               <div className="result-header-metric">
                 <div>
                   <div className={`result-score ${result.score >= 70 ? "text-danger" : result.score >= 40 ? "text-warn" : "text-safe"}`}>
